@@ -2,22 +2,29 @@
 
 #include<stddef.h>
 
-enum tensor_type {
-	TENSOR_FLOAT = 0,
-	TENSOR_MPFR,
-	TENSOR_DOUBLE,
-	TENSOR_BOOL,
-	TENSOR_INT
-};
-#define TENSOR_FLOAT (0)
-#define TENSOR_MPFR (1)
-#define TENSOR_DOUBLE (2)
-#define TENSOR_BOOL (3)
-#define TENSOR_INT (4)
+
+
+
+#define TENSOR_TYPES_LIST \
+	X(TENSOR_FLOAT,	0, float	)\
+	X(TENSOR_MPFR,	1, mpfr_t	)\
+	X(TENSOR_DOUBLE,2, double	)\
+	X(TENSOR_BOOL,	3, bool		)\
+	X(TENSOR_INT,	4, int		)
+
+
+typedef enum {
+#define X(name) name = val, 
+	TENSOR_TYPES_LIST
+#undef X
+} tensor_type_t;
+
+
+
 
 
 typedef struct {
-	enum tensor_type type;
+	tensor_type_t type;
 	int order;
 	int* shape;
 	size_t comps_len;

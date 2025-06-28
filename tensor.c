@@ -8,13 +8,15 @@
 #include<string.h>
 #include"error.h"
 
+
+
 static const size_t sizeof_tensor_type[] = {
-        [TENSOR_FLOAT ] = sizeof(float ),
-        [TENSOR_MPFR  ] = sizeof(mpfr_t),
-        [TENSOR_DOUBLE] = sizeof(double),
-        [TENSOR_BOOL  ] = sizeof(bool  ),
-        [TENSOR_INT   ] = sizeof(int   )
+#define X(name, val, type) [val] = sizeof(type),
+	TENSOR_TYPES_LIST
+#undef X
 };
+
+
 
 tensor_t* tensor_init(enum tensor_type type, int order, int shape[static order]) {
 	expect( sizeof(*shape) == sizeof(((tensor_t*){0})->shape), 
@@ -163,19 +165,19 @@ tensor_iterator_t* titer_init(tensor_t* t, int casted_order, int casted_shape[st
 
 	return iter;
 }
-void titer_clear(tensor_iterator_t iter[static 1]) {
+void titer_clear(tensor_iterator_t* iter) {
 	free(iter);
 	return;
 }
 
 bool titer_has_next(tensor_iterator_t iter[static 1]) { // TODO inline
-	if (iter->comps_left != 0) 
+	if (iter->iterations_remaining != 0) 
 		return true;
 	else
 		return false;
 }
 
-bool titer_next(tensor_iterator_t iter[static 1]) {	
+void titer_next(tensor_iterator_t iter[static 1]) {	
 
 	int i = 0;
 
@@ -194,13 +196,13 @@ bool titer_next(tensor_iterator_t iter[static 1]) {
 	}
 
 	expect(iter->iterations_remaining != 0, "iterations remaining are about to be decremented too much.");
-	iter->iterations_left--;	
+	iter->iterations_remaining--;	
 	return;
 }
 
 
 
-int titer_flatten_index(tensor_interator_t iter[static 1]) {
+int titer_flatten_index(tensor_iterator_t iter[static 1]) {
 
 	int ret = 0;
 	int stride = 1;
@@ -214,11 +216,11 @@ int titer_flatten_index(tensor_interator_t iter[static 1]) {
 }
 
 
-#define LIST_OF_SCALAR_OPERATIONS \
-	X(
 
 
-
+inline void* tensor_get_comp(tensor_t t[static 1], size_t offset) {
+	return (int8_t*)t->comps + offset*sizeof_tensor_type[t->type];
+}
 
 static tensor_t* tensor_scalar_operation(void (*op)(void*, void*, void*), tensor_t op1[static 1], tensor_t op2[static 1]) {
 	expect(op1->type == op2->type, "in %s(), expected tensors of same type.", __func__);
@@ -230,15 +232,15 @@ static tensor_t* tensor_scalar_operation(void (*op)(void*, void*, void*), tensor
 			res_shape
 	);	
 
-	titer_t* op1_iter = titer_init(op1, res->order, res->shape);
-	titer_t* op2_iter = titer_init(op2, res->order, res->shape);
+	tensor_iterator_t* op1_iter = titer_init(op1, res->order, res->shape);
+	tensor_iterator_t* op2_iter = titer_init(op2, res->order, res->shape);
 	int res_index = 0;
 
 	while (titer_has_next(op1_iter) && titer_has_next(op2_iter)) {
 		int op1_index = titer_flatten_index(op1_iter);
 		int op2_index = titer_flatten_index(op2_iter);
 
-		op(&res->comps[res_index], &op1->comps[op1_index], &op2->comps[op2_index]);
+		op(tensor_comp_ref(res, res_index), tensor_comp_ref(op1, op1_index),tensor_comp_ref(op2, op2_index));
 		// res->comps[res_index] = op1->comps[op1_index] + op2->comps[op2_index];
 
 		res_index++;
