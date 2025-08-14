@@ -10,7 +10,7 @@
 
 
 
-static const size_t sizeof_tensor_type[] = {
+static const size_t sizeof_tensor_dtype[] = {
 #define X(name, val, type) [val] = sizeof(type),
 	TENSOR_TYPES_LIST
 #undef X
@@ -18,7 +18,7 @@ static const size_t sizeof_tensor_type[] = {
 
 
 
-tensor_t* tensor_init(enum tensor_type type, int order, int shape[static order]) {
+tensor_t* tensor_init(tensor_dtype type, int order, int shape[static order]) {
 	expect( sizeof(*shape) == sizeof(((tensor_t*){0})->shape), 
 			"function %s() definition is not inline with struct definition.", __func__);
 
@@ -27,7 +27,7 @@ tensor_t* tensor_init(enum tensor_type type, int order, int shape[static order])
 		comps_count *= shape[i];
 	}
 
-	tensor_t* t = malloc(sizeof(*t) + comps_count *sizeof_tensor_type[type]);
+	tensor_t* t = malloc(sizeof(*t) + comps_count *sizeof_tensor_dtype[type]);
 	expect(t != NULL, "malloc failed.");
 	
 	*t = (tensor_t) {
@@ -65,7 +65,7 @@ tensor_t* tensor_load(char* filename) {
 
 
 	tensor_t* t = tensor_init(tmp.type, tmp.order, tmp.shape);
-	fread(t->comps, sizeof_tensor_type[t->type], t->comps_len, fp);
+	fread(t->comps, sizeof_tensor_dtype[t->type], t->comps_len, fp);
 
 
 	free(tmp.shape);	
@@ -81,7 +81,7 @@ void tensor_save(tensor_t t[static 1], char* filename) {
 
 	fwrite(t, sizeof(*t), 1, fp);
 	fwrite(t->shape, sizeof(*t->shape), t->order, fp);
-	fwrite(t->comps, sizeof_tensor_type[t->type], t->comps_len, fp);
+	fwrite(t->comps, sizeof_tensor_dtype[t->type], t->comps_len, fp);
 
 	fclose(fp);
 	return;
