@@ -6,25 +6,21 @@
 
 
 #define TENSOR_TYPES_LIST \
-	X(TENSOR_FLOAT,	0, float	)\
 	X(TENSOR_MPFR,	1, mpfr_t	)\
-	X(TENSOR_DOUBLE,2, double	)\
-	X(TENSOR_BOOL,	3, bool		)\
-	X(TENSOR_INT,	4, int		)
-
+	X(TENSOR_DOUBLE,2, double	)
 
 typedef enum {
 #define X(name) name = val, 
 	TENSOR_TYPES_LIST
 #undef X
-} tensor_type_t;
+} tensor_dtype;
 
 
 
 
 
 typedef struct {
-	tensor_type_t type;
+	tensor_dtype type;
 	int order;
 	int* shape;
 	size_t comps_len;
@@ -32,7 +28,7 @@ typedef struct {
 } tensor_t;
 
 
-tensor_t* tensor_init(enum tensor_type type, int order, int shape[static order]);
+tensor_t* tensor_init(tensor_dtype type, int order, int shape[static order]);
 void tensor_clear(tensor_t* t);
 
 tensor_t* tensor_load(char* filename);
